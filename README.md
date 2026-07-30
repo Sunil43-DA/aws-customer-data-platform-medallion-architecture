@@ -574,7 +574,7 @@ To reproduce this project:
 ### Connect with me
 
 - LinkedIn: www.linkedin.com/in/sunil-reddy-35aa203ab
-- GitHub: *(Add your GitHub profile URL)*
+- GitHub: https://github.com/Sunil43-DA
 
 ---
 
