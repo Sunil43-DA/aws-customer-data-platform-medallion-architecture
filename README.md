@@ -1,221 +1,128 @@
 # AWS Customer Data Platform using Medallion Architecture
 
-## Project Overview
-
-This project demonstrates an end-to-end cloud-based Customer Data Platform (CDP) built on AWS using a Medallion Architecture (Bronze, Silver, and Gold layers). The solution automates customer data ingestion, cleansing, enrichment, historical tracking using Slowly Changing Dimension (SCD Type 2), orchestration, scheduling, monitoring, and reporting.
-
-The project was developed to demonstrate modern data engineering practices using AWS services and PySpark.
+> An end-to-end AWS Data Engineering project that implements a Medallion Architecture (Bronze, Silver, Gold) with AWS Glue, PySpark, Step Functions, EventBridge, Athena, and Slowly Changing Dimension (SCD Type 2) for historical data management.
 
 ---
 
-## Architecture
+## Table of Contents
+
+- [Project Overview](#project-overview)
+- [Business Problem](#business-problem)
+- [Solution Overview](#solution-overview)
+- [Architecture](#architecture)
+- [AWS Services Used](#aws-services-used)
+- [Repository Structure](#repository-structure)
+- [Data Pipeline Workflow](#data-pipeline-workflow)
+- [Bronze Layer](#bronze-layer)
+- [Silver Layer](#silver-layer)
+- [Gold Layer](#gold-layer)
+- [SCD Type 2 Implementation](#scd-type-2-implementation)
+- [Workflow Orchestration](#workflow-orchestration)
+- [Monitoring and Notifications](#monitoring-and-notifications)
+- [ETL Tracker](#etl-tracker)
+- [Data Quality Checks](#data-quality-checks)
+- [Project Screenshots](#project-screenshots)
+- [Key Skills Demonstrated](#key-skills-demonstrated)
+- [Future Enhancements](#future-enhancements)
+
+---
+
+# Project Overview
+
+This project demonstrates the design and implementation of a cloud-native Customer Data Platform (CDP) on AWS using a Medallion Architecture. The solution ingests raw customer data from Amazon S3, transforms and enriches it using AWS Glue and PySpark, and builds a historical customer dimension using Slowly Changing Dimension (SCD Type 2).
+
+The pipeline is fully orchestrated using AWS Step Functions, automatically scheduled with Amazon EventBridge, monitored through CloudWatch Logs, and integrated with Amazon SNS for operational notifications.
+
+The final curated data is stored in Parquet format and made available for analytics through Amazon Athena.
+
+---
+
+# Business Problem
+
+Many organizations receive customer data from multiple operational systems. Raw data often contains:
+
+- Duplicate customer records
+- Missing or inconsistent values
+- Country codes instead of readable country names
+- Customer updates that overwrite historical information
+
+Without a structured data engineering pipeline, reporting becomes unreliable and customer history cannot be accurately tracked.
+
+This project addresses these challenges by implementing a scalable Medallion Architecture with historical data management using SCD Type 2.
+
+---
+
+# Solution Overview
+
+The pipeline follows a three-layer Medallion Architecture:
+
+```text
+Landing (CSV Files)
+        │
+        ▼
+Bronze Layer
+Raw data converted to Parquet
+        │
+        ▼
+Silver Layer
+Cleaned, validated and enriched data
+        │
+        ▼
+Gold Layer
+Customer Dimension (SCD Type 2)
+        │
+        ▼
+Amazon Athena
+```
+
+The workflow is automatically orchestrated and monitored using AWS managed services.
+
+---
+
+# Architecture
 
 ![Architecture](architecture/architecture.png)
 
 ---
 
-## AWS Services Used
+# AWS Services Used
 
-- Amazon S3
-- AWS Glue ETL
-- AWS Glue Data Catalog
-- AWS Glue Crawlers
-- Amazon Athena
-- AWS Step Functions
-- Amazon EventBridge
-- Amazon SNS
-- Amazon CloudWatch
-
----
-
-## Solution Architecture
-
-The pipeline follows the Medallion Architecture:
-
-```
-Landing
-   │
-   ▼
-Bronze Layer
-   │
-   ▼
-Silver Layer
-   │
-   ▼
-Gold Layer (SCD Type 2)
-   │
-   ▼
-Athena Reporting
-```
+| Service | Purpose |
+|----------|---------|
+| Amazon S3 | Stores landing, Bronze, Silver and Gold data |
+| AWS Glue ETL | Executes PySpark ETL jobs |
+| AWS Glue Crawlers | Creates Data Catalog metadata |
+| AWS Glue Data Catalog | Metadata repository for Athena |
+| Amazon Athena | SQL analytics on Parquet datasets |
+| AWS Step Functions | Orchestrates the ETL workflow |
+| Amazon EventBridge | Schedules daily pipeline execution |
+| Amazon SNS | Sends success and failure notifications |
+| Amazon CloudWatch | Job logging and execution monitoring |
 
 ---
 
-## Repository Structure
+# Repository Structure
 
-```
+```text
 aws-customer-data-platform-medallion-architecture/
 │
 ├── architecture/
+│   └── architecture.png
+│
 ├── documentation/
+│
 ├── glue-jobs/
+│   ├── bronze_load_job.py
+│   ├── silver_enrichment_job.py
+│   └── gold_scd2_job.py
+│
 ├── sample-data/
+│   ├── customer_day1.csv
+│   ├── customer_day2.csv
+│   ├── customer_day3.csv
+│   └── country_lookup.csv
+│
 ├── screenshots/
+│
 └── README.md
 ```
-
----
-
-## Data Pipeline
-
-### Bronze Layer
-
-- Reads raw CSV files from Amazon S3
-- Converts CSV to Parquet
-- Adds ingestion timestamp
-- Stores raw data in Bronze layer
-
-### Silver Layer
-
-- Cleans customer records
-- Standardizes values
-- Removes duplicate customers
-- Enriches customer records using country lookup
-- Stores enriched data in Parquet
-
-### Gold Layer
-
-Implements Slowly Changing Dimension (SCD Type 2):
-
-- Detects new customers
-- Detects changed customer attributes
-- Generates surrogate keys
-- Preserves historical records
-- Maintains current and historical versions
-- Updates ETL Tracker
-
----
-
-## Workflow Orchestration
-
-AWS Step Functions orchestrates the pipeline:
-
-1. Bronze ETL
-2. Silver ETL
-3. Gold ETL
-4. SNS Success Notification
-
-The workflow includes Retry and Catch mechanisms for failure handling.
-
----
-
-## Scheduling
-
-Amazon EventBridge automatically triggers the Step Functions workflow on a predefined schedule.
-
----
-
-## Monitoring
-
-The project uses:
-
-- CloudWatch Logs
-- Step Functions Execution History
-- SNS Email Notifications
-
-for operational monitoring.
-
----
-
-## Data Quality Checks
-
-The Gold layer validates:
-
-- Null Customer IDs
-- Duplicate Surrogate Keys
-- Multiple Current Records
-- Processed Row Counts
-
-The pipeline stops if validation fails.
-
----
-
-## ETL Tracker
-
-The ETL Tracker maintains:
-
-- Table Name
-- Processed Rows
-- Last Surrogate Key
-- Last Source Update Timestamp
-- Load Timestamp
-
----
-
-## Project Screenshots
-
-### Architecture
-
-![Architecture](screenshots/architecture.png)
-
-### Bronze Layer
-
-![Bronze](screenshots/bronze-data.png)
-
-### Silver Layer
-
-![Silver](screenshots/silver-data.png)
-
-### Gold Layer
-
-![Gold](screenshots/gold-data.png)
-
-### ETL Tracker
-
-![Tracker](screenshots/etl-tracker.png)
-
-### Glue Jobs
-
-![Glue Jobs](screenshots/glue-jobs.png)
-
-### Step Functions
-
-![Step Functions Success](screenshots/step-functions-success.png)
-
-### EventBridge
-
-![EventBridge](screenshots/eventbridge-schedule.png)
-
----
-
-## Key Features
-
-- Medallion Architecture
-- Incremental Data Processing
-- SCD Type 2
-- Hash-Based Change Detection
-- Surrogate Key Generation
-- ETL Metadata Tracking
-- Step Functions Orchestration
-- EventBridge Scheduling
-- SNS Notifications
-- Data Quality Validation
-- Athena Analytics
-
----
-
-## Future Enhancements
-
-- AWS Lambda Integration
-- Infrastructure as Code using Terraform
-- CI/CD with GitHub Actions
-- Great Expectations Data Validation
-- Amazon QuickSight Dashboards
-- AWS Lake Formation Integration
-
----
-
-## Author
-
-Sunil Reddy
-
-Data Engineer | AWS | PySpark | SQL | ETL | Data Warehousing
