@@ -1,0 +1,5 @@
+cust_id,first_name,last_name,email,phone,address,city,state,country_code,postal_code,updated_at
+1001,Asha,Kumar,asha.kumar@example.com,+91-90000-00001,12 MG Road,Bengaluru,KA,IN,560001,2026-01-10
+1002,Rahul,Iyer,rahul.iyer@example.com,+91-90000-00002,102 OMR,Chennai,TN,IN,600119,2026-01-10
+1003,Meera,Singh,meera.singh@example.com,+44-7000-000999,8 Baker St,London,London,GB,NW1 6XE,2026-01-10
+1005,Karthik,N,karthik.n@example.com,+91-90000-00005,5 Anna Salai,Coimbatore,TN,IN,641001,2026-01-10
