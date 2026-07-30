@@ -3,9 +3,19 @@ import sys
 from awsglue.context import GlueContext
 from awsglue.job import Job
 from pyspark.context import SparkContext
-from pyspark.sql.functions import col, trim, upper, current_timestamp, to_timestamp
+from pyspark.sql.functions import (
+    col,
+    trim,
+    upper,
+    current_timestamp,
+    to_timestamp,
+    row_number,
+)
 from pyspark.sql.window import Window
-from pyspark.sql.functions import row_number
+
+# ===============================
+# Initialize Glue Context
+# ===============================
 
 sc = SparkContext()
 glueContext = GlueContext(sc)
@@ -33,7 +43,6 @@ country_silver_path = "s3://zentric-customer-platform-sunil/silver/country/"
 # ===============================
 
 customer_df = spark.read.parquet(customer_bronze_path)
-
 country_df = spark.read.parquet(country_bronze_path)
 
 # ===============================
@@ -67,8 +76,8 @@ country_clean_df = (
 )
 
 # ===============================
-# Deduplicate Customer Records
-# Keep latest updated_at per cust_id
+# Remove Duplicate Customer Records
+# Keep Latest Record Per Customer
 # ===============================
 
 window_spec = Window.partitionBy("cust_id").orderBy(col("updated_at").desc())
@@ -81,41 +90,44 @@ customer_dedup_df = (
 )
 
 # ===============================
-# Enrich Customer with Country Lookup
+# Enrich Customer Data
 # ===============================
 
 customer_enriched_df = (
-    customer_dedup_df.alias("c")
+    customer_dedup_df.alias("customer")
     .join(
-        country_clean_df.alias("l"),
-        col("c.country_code") == col("l.country_code"),
+        country_clean_df.alias("country"),
+        col("customer.country_code") == col("country.country_code"),
         "left"
     )
     .select(
-        col("c.cust_id"),
-        col("c.first_name"),
-        col("c.last_name"),
-        col("c.email"),
-        col("c.phone"),
-        col("c.address"),
-        col("c.city"),
-        col("c.state"),
-        col("c.postal_code"),
-        col("l.country_name"),
-        col("l.region"),
-        col("c.updated_at"),
+        col("customer.cust_id"),
+        col("customer.first_name"),
+        col("customer.last_name"),
+        col("customer.email"),
+        col("customer.phone"),
+        col("customer.address"),
+        col("customer.city"),
+        col("customer.state"),
+        col("customer.postal_code"),
+        col("country.country_name"),
+        col("country.region"),
+        col("customer.updated_at"),
         current_timestamp().alias("load_date")
     )
 )
 
 # ===============================
-# Write to Silver Layer
-# Truncate & Load = overwrite
+# Write Customer Data to Silver
 # ===============================
 
 customer_enriched_df.write \
     .mode("overwrite") \
     .parquet(customer_silver_path)
+
+# ===============================
+# Write Country Lookup to Silver
+# ===============================
 
 country_clean_df.write \
     .mode("overwrite") \
